@@ -39,8 +39,8 @@ jobs:
           echo IMAGE_ID_DOCKER_HUB=$IMAGE_ID_DOCKER_HUB
 
           BRANCH=$(echo ${{ github.ref }} | sed 's#refs/head/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
-          for tag in "${{ github.sha }} ${{ github.run_id }} $BRANCH latest"; do
-            for img_id in "$IMAGE_ID_DOCKER_HUB $IMAGE_ID_GITHUB_PKG"; do
+          for tag in ${{ github.sha }} ${{ github.run_id }} $BRANCH latest; do
+            for img_id in $IMAGE_ID_DOCKER_HUB $IMAGE_ID_GITHUB_PKG; do
               docker tag $IMAGE_NAME $img_id:$tag
               docker push $img_id:$tag
             done
