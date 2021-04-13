@@ -28,7 +28,7 @@ jobs:
 
       - name: Push image
         run: |
-          IMAGE_ID_GITHUB_PKG=docker.pkg.github.com/${{ github.repository }}
+          IMAGE_ID_GITHUB_PKG=docker.pkg.github.com/${{ github.repository }}/image
           IMAGE_ID_DOCKER_HUB=docker.io/${{ github.repository }}
 
           # Change all uppercase to lowercase
