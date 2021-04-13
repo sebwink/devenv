@@ -1,0 +1,54 @@
+name: Docker
+
+on:
+  push:
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  IMAGE_NAME: devenv
+
+jobs:
+  # Build and Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    # TODO: test job exists passes before pushing image.
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+          docker build . --file Dockerfile --tag $IMAGE_NAME
+
+      - name: Log into registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login docker.io -u sebwink --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID_GITHUB_PKG=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
+          IMAGE_ID_DOCKER_HUB=docker.io/sebwink/$IMAGE_NAME
+
+          # Change all uppercase to lowercase
+          IMAGE_ID_GITHUB_PKG=$(echo $IMAGE_ID_GITHUB_PKG | tr '[A-Z]' '[a-z]')
+          IMAGE_ID_DOCKER_HUB=$(echo $IMAGE_ID_DOCKER_HUB | tr '[A-Z]' '[a-z]')
+
+          echo IMAGE_ID_GITHUB_PKG=$IMAGE_ID_GITHUB_PKG
+          echo IMAGE_ID_DOCKER_HUB=$IMAGE_ID_DOCKER_HUB
+
+          BRANCH=$(echo $GITHUB_REF | sed 's#refs/head/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
+          for tag in "$GITHUB_SHA $GITHUB_RUN_ID $GITHUB_JOB $BRANCH"; do
+            for img_id in "$IMAGE_ID_DOCKER_HUB $IMAGE_ID_GITHUB_PKG"; do
+              docker tag $IMAGE_NAME $img_id:$GITHUB_SHA
+              docker push $img_id:$GITHUB_SHA
+            done
+          done
