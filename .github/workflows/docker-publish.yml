@@ -24,12 +24,12 @@ jobs:
       - name: Log into registry
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
-          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login docker.io -u sebwink --password-stdin
+          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login docker.io -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         run: |
-          IMAGE_ID_GITHUB_PKG=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
-          IMAGE_ID_DOCKER_HUB=docker.io/sebwink/$IMAGE_NAME
+          IMAGE_ID_GITHUB_PKG=docker.pkg.github.com/${{ github.repository }}
+          IMAGE_ID_DOCKER_HUB=docker.io/${{ github.repository }}
 
           # Change all uppercase to lowercase
           IMAGE_ID_GITHUB_PKG=$(echo $IMAGE_ID_GITHUB_PKG | tr '[A-Z]' '[a-z]')
@@ -38,10 +38,10 @@ jobs:
           echo IMAGE_ID_GITHUB_PKG=$IMAGE_ID_GITHUB_PKG
           echo IMAGE_ID_DOCKER_HUB=$IMAGE_ID_DOCKER_HUB
 
-          BRANCH=$(echo $GITHUB_REF | sed 's#refs/head/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
-          for tag in "$GITHUB_SHA $GITHUB_RUN_ID $GITHUB_JOB $BRANCH"; do
+          BRANCH=$(echo ${{ github.ref }} | sed 's#refs/head/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
+          for tag in "${{ github.sha }} ${{ github.run_id }} ${{ github.job }} $BRANCH"; do
             for img_id in "$IMAGE_ID_DOCKER_HUB $IMAGE_ID_GITHUB_PKG"; do
-              docker tag $IMAGE_NAME $img_id:$GITHUB_SHA
-              docker push $img_id:$GITHUB_SHA
+              echo "docker tag $IMAGE_NAME $img_id:$GITHUB_SHA"
+              echo "docker push $img_id:$GITHUB_SHA"
             done
           done
