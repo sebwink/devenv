@@ -1,5 +1,5 @@
 FROM debian:stretch-slim
 
-RUN apt-get update && \
-      apt-get upgrade -y \
-      apt-get install neovim
+RUN apt update && \
+    apt-get upgrade -y \
+    apt-get install neovim
