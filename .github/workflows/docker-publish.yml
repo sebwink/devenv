@@ -41,7 +41,7 @@ jobs:
           BRANCH=$(echo ${{ github.ref }} | sed 's#refs/head/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
           for tag in "${{ github.sha }} ${{ github.run_id }} ${{ github.job }} $BRANCH"; do
             for img_id in "$IMAGE_ID_DOCKER_HUB $IMAGE_ID_GITHUB_PKG"; do
-              echo "docker tag $IMAGE_NAME $img_id:$GITHUB_SHA"
-              echo "docker push $img_id:$GITHUB_SHA"
+              echo "docker tag $IMAGE_NAME $img_id:$tag"
+              echo "docker push $img_id:$tag"
             done
           done
