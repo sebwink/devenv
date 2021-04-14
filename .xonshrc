@@ -1,0 +1,191 @@
+#!/usr/bin/env xonsh
+
+$FOREIGN_ALIASES_SUPPRESS_SKIP_MESSAGE = True
+$COLOR_INPUT = True
+
+import os
+
+import builtins
+from prompt_toolkit.key_binding import vi_state
+
+# XONSH WIZARD START
+source-bash "echo loading xonsh foreign shell"
+xontrib load autoxsh coreutils distributed jedi mpl prompt_ret_code whole_word_jumping vox 
+
+$PROJECT_DIRS=$HOME
+
+$VI_MODE = True
+
+# XONSH WIZARD END
+#
+
+aliases['dctl'] = 'cd ~/ctl/docker'
+
+# nerd fonts
+
+# source-bash $HOME/bin/nerd-fonts/i_dev.sh
+# source-bash $HOME/bin/nerd-fonts/i_material.sh
+
+NF_GIT = ''
+NF_NODEJS = ''
+NF_REACT = ''
+NF_PYTHON = ''
+NF_RUST = ''
+NF_CPP = 'ﭱ'
+NF_DOCKER = ''
+NF_DIGITAL_OCEAN = ''
+NF_JAVA = ''
+
+#$UPDATE_PROMPT_ON_KEYPRESS = True
+
+from prompt_toolkit.keys import Keys
+
+@events.on_ptk_create
+def custom_keybindings(bindings, **kw):
+    # prompt_toolkit 2.x
+    handler = bindings.add
+
+    @handler(Keys.ControlW)
+    def say_hi(event):
+        event.current_buffer.insert_text('hi')
+
+
+class VEnv:
+
+	@classmethod 
+	def name(cls):
+		venv = ${...}.get('VIRTUAL_ENV')
+		if venv:
+			return os.path.basename(venv)
+		return None
+
+class Git:
+
+	@classmethod
+	def inside_worktree(cls):
+		return $(git rev-parse --is-inside-work-tree).strip() == 'true'
+    
+	@classmethod
+	def full_repo_path(cls):
+		return $(git rev-parse --show-toplevel).strip()
+
+	@classmethod
+	def repo_name(cls):
+		return os.path.basename(cls.full_repo_path())
+
+	@classmethod 
+	def isx(cls, xcmd):
+		orig = $(pwd).strip()
+		while True:
+			x = xcmd()
+			if x:
+				cd @(orig)
+				return True 
+			if $(pwd).strip() in { $HOME, '/' }:
+				cd @(orig)
+				return False
+			cd ..
+
+	@classmethod 
+	def is_nodejs(cls):
+		return cls.isx(lambda: $(ls package.json))
+
+	@classmethod 
+	def is_rust(cls):
+		return cls.isx(lambda: $(ls Cargo.toml))
+
+	@classmethod 
+	def is_java(cls):
+		return cls.isx(lambda: $(ls pom.xml))
+
+	@classmethod 
+	def is_react(cls):
+		return cls.isx(lambda: $(grep react package.json))
+
+	@classmethod 
+	def is_python(cls):
+		return cls.isx(lambda: $(ls setup.py))
+
+	@classmethod
+	def is_cpp(cls):
+		return cls.isx(cls._is_cpp)
+
+	@classmethod 
+	def _is_cpp(cls):
+		return $(grep "CXX=" Makefile)
+
+	@classmethod 
+	def is_R(cls):
+		return os.path.isdir('R')
+
+	@classmethod 
+	def has_dockerfile(cls):
+		return cls.isx(lambda: $(ls Dockerfile))
+	
+	@classmethod 
+	def has_docker(cls):
+		return cls.isx(lambda: $(ls docker))
+
+
+def prompt():
+	p = ''
+	#p += '{INTENSE_GREEN}'+distro+'{NO_COLOR}|'
+	venv = VEnv.name()
+	if venv is not None:
+		p += ND_PYTHON + ' ('+venv+')|'
+	#p += user+'{INTENSE_GREEN}@{NO_COLOR} '+distro+' '
+	if Git.inside_worktree():
+		p += ''
+		repo = Git.repo_name()
+		p += NF_GIT + ' ({INTENSE_YELLOW}'+repo+'{RESET}:{GREEN}{curr_branch}{RESET})'
+		tech = []
+		if Git.is_rust():
+			tech.append( NF_RUST + ' ' )
+		if Git.is_nodejs():
+			tech.append( NF_NODEJS + ' ' )
+		if Git.is_react():
+			tech.append( NF_REACT + ' ' )
+		if Git.is_python():
+			tech.append( NF_PYTHON + ' ' )
+		if Git.is_R():
+			tech.append( 'R ' )
+		if Git.is_cpp():
+			tech.append( NF_CPP + ' ')
+		if Git.is_java():
+			tech.append( NF_JAVA + ' ')
+		if Git.has_dockerfile() or Git.has_docker():
+			tech.append( NF_DOCKER + ' ' )
+		if tech:
+			p += '|' + ''.join([techi for techi in tech])
+		p += '|'
+	cursor = ''
+	if $(pwd).strip() == $HOME+'/ctl/docker':
+		cursor = NF_DOCKER
+	p += '{INTENSE_GREEN}'+cursor+'{RESET} '
+	return p
+
+$PROMPT = prompt 
+
+'''
+from queue import Queue
+
+origin_dir = Queue()
+origin_dir.put($HOME)
+
+@events.on_precommand
+def _origin_dir(**kw):
+	cwd = os.getcwd() 
+	if cwd != $HOME+'/ctl/docker':
+		origin_dir.get()
+		origin_dir.put(cwd) 
+'''
+
+# CMD hooks
+@events.on_transform_command
+def _dctl(cmd, **kw):
+	cwd = os.getcwd()
+	if cwd == $HOME+'/ctl/docker':
+		if not cmd.startswith('docker') and \
+		   not cmd.startswith('cd'):
+			cmd = 'docker '+cmd.strip()
+	return cmd
