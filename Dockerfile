@@ -4,7 +4,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 USER root
 
-COPY install-packages /usr/bin
+COPY scripts/install-packages /usr/bin
 RUN chmod +x /usr/bin/install-packages
 
 # UPGRADE PACKAGES && PURGE VIM
@@ -69,7 +69,8 @@ RUN python3 -m pip install neovim && \
 RUN python3 -m pip install xonsh xonsh-autoxsh prompt_toolkit jedi
 # TMUXP
 RUN python3 -m pip install tmuxp
-# C/C++ - clang
+
+# Clang
 RUN install-packages clang-format \
       clang-tidy \
       clang \
@@ -77,11 +78,28 @@ RUN install-packages clang-format \
       lld \
       lldb 
 
+# NVIDIA HPC SDK
+RUN wget https://developer.download.nvidia.com/hpc-sdk/21.3/nvhpc-21-3_21.3_amd64.deb \
+      https://developer.download.nvidia.com/hpc-sdk/21.3/nvhpc-2021_21.3_amd64.deb && \
+    install-packages gfortran \
+      libnuma1 \
+      libncursesw5 \
+      libtinfo5 && \
+    apt install ./nvhpc-21-3_21.3_amd64.deb ./nvhpc-2021_21.3_amd64.deb && \
+    rm nvhpc-21-3_21.3_amd64.deb nvhpc-2021_21.3_amd64.deb && \
+    ln -s /opt/nvidia/hpc_sdk/Linux_x86_64/21.3/cuda/11.2 /usr/local/cuda-11.2
+
+# Intel OneApi Base + HPC
+RUN wget -O - https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB | apt-key add - && \
+    echo "deb https://apt.repos.intel.com/oneapi all main" | tee /etc/apt/sources.list.d/oneAPI.list && \
+    add-apt-repository "deb https://apt.repos.intel.com/oneapi all main" && \
+    install-packages intel-basekit \
+      intel-hpckit
+
 # USER
 RUN useradd -l -u 1000 -G sudo -md /home/sebwink -s /bin/bash -p sebwink sebwink
-ENV HOME=/home/sebwink
+ENV HOME /home/sebwink
 WORKDIR $HOME
-
 USER sebwink
 
 # SPACEVIM
@@ -90,7 +108,7 @@ RUN curl -sLf https://spacevim.org/install.sh | bash && \
     vim "+call dein#add('Shougo/vimproc.vim', {'build': 'make'})" +qall && \
     vim +VimProcInstall +qall
 # SPACEVIM CONFIG
-COPY SpaceVim.d /home/sebwink/.SpaceVim.d
+COPY config/SpaceVim.d $HOME/.SpaceVim.d
 RUN vim "+call dein#install#_update([], 'update', 0)" +qall
 
 # NVM -> node + npm
@@ -115,11 +133,11 @@ RUN cd ~/.cache/vimfiles/repos/github.com/Valloric/YouCompleteMe && \
 RUN vim +UpdateRemotePlugins +qall
 
 # XONSH CONFIG
-COPY xonshrc /home/sebwink/.xonshrc
+COPY config/xonshrc $HOME/.xonshrc
 RUN mkdir -p $HOME/.xcontext/docker
 # TMUX CONFIG
-COPY tmux.conf /home/sebwink/.tmux.conf
+COPY config/tmux.conf $HOME/.tmux.conf
 # TMUXP
 #
 RUN mkdir workspace
-WORKDIR /home/sebwink/workspace
+WORKDIR $HOME/workspace
