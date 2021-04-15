@@ -38,7 +38,7 @@ jobs:
           echo IMAGE_ID_GITHUB_PKG=$IMAGE_ID_GITHUB_PKG
           echo IMAGE_ID_DOCKER_HUB=$IMAGE_ID_DOCKER_HUB
 
-          IMAGES="$IMAGE_ID_GITHUB_PKG"
+          IMAGES="$IMAGE_ID_GITHUB_PKG $IMAGE_ID_DOCKER_HUB"
           BRANCH=$(echo ${{ github.ref }} | sed 's#refs/heads/##g' | sed 's#refs/tags/##g' | sed 's#/#-#g')
           TAGS="${{ github.sha }} ${{ github.run_id }} $BRANCH latest"
 
