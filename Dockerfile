@@ -72,30 +72,15 @@ RUN python3 -m pip install tmuxp
 # YCM DEPENCENCIES
 RUN install-packages vim-nox && \
     # TODO go -> manual && nodejs/nom -> nvm && java -> java11?
-    install-packages mono-complete golang nodejs default-jdk npm
+    install-packages nodejs npm
 
 # C/C++ - clang
 RUN install-packages clang-format \
       clang-tidy \
-      clang-tools \
       clang \
-      clangd \
-      libc++-dev \
-      libc++1 \
-      libc++abi-dev \
-      libc++abi1 \
-      libclang-dev \
-      libclang1 \
-      liblldb-dev \
-      libllvm-ocaml-dev \
-      libomp-dev \
       libomp5 \
       lld \
-      lldb \
-      llvm-dev \
-      llvm-runtime \
-      llvm \
-      python3-clang
+      lldb 
 
 # GITPOD USER
 RUN useradd -l -u 1000 -G sudo -md /home/gitpod -s /bin/bash -p gitpod gitpod
@@ -114,7 +99,7 @@ COPY SpaceVim.d /home/gitpod/.SpaceVim.d
 RUN vim "+call dein#install#_update([], 'update', 0)" +qall
 # YCM
 RUN cd ~/.cache/vimfiles/repos/github.com/Valloric/YouCompleteMe && \
-    python3 install.py --all
+    python3 install.py --clangd-complete --rust-completer --ts-completer
 
 RUN vim +UpdateRemotePlugins +qall
 
