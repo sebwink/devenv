@@ -112,3 +112,4 @@ COPY tmux.conf /home/gitpod/.tmux.conf
 #
 RUN mkdir workspace
 WORKDIR /home/gitpod/workspace
+
