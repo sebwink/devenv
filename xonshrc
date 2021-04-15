@@ -18,8 +18,7 @@ $VI_MODE = True
 
 # XONSH WIZARD END
 #
-
-aliases['dctl'] = 'cd ~/ctl/docker'
+aliases['dctx'] = 'cd ~/.xcontext/docker'
 
 # nerd fonts
 
@@ -108,11 +107,7 @@ class Git:
 
 	@classmethod
 	def is_cpp(cls):
-		return cls.isx(cls._is_cpp)
-
-	@classmethod 
-	def _is_cpp(cls):
-		return $(grep "CXX=" Makefile)
+		return cls.isx(lambda: $(ls CMakeLists.txt)) and cls.isx(lambda: $(grep CXX CMakeLists.txt))
 
 	@classmethod 
 	def is_R(cls):
@@ -166,26 +161,12 @@ def prompt():
 
 $PROMPT = prompt 
 
-'''
-from queue import Queue
-
-origin_dir = Queue()
-origin_dir.put($HOME)
-
-@events.on_precommand
-def _origin_dir(**kw):
-	cwd = os.getcwd() 
-	if cwd != $HOME+'/ctl/docker':
-		origin_dir.get()
-		origin_dir.put(cwd) 
-'''
-
 # CMD hooks
 @events.on_transform_command
-def _dctl(cmd, **kw):
+def _docker(cmd, **kw):
 	cwd = os.getcwd()
-	if cwd == $HOME+'/ctl/docker':
+	if cwd == $HOME+'/.xcontext/docker':
 		if not cmd.startswith('docker') and \
 		   not cmd.startswith('cd'):
-			cmd = 'docker '+cmd.strip()
+			cmd = 'docker ' + cmd.strip()
 	return cmd
