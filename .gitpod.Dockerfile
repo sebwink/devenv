@@ -1,1 +1,1 @@
-FROM sebwink/devenv
+FROM sebwink/devenv:752418398
