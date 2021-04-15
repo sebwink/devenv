@@ -69,11 +69,6 @@ RUN python3 -m pip install neovim && \
 RUN python3 -m pip install xonsh xonsh-autoxsh prompt_toolkit jedi
 # TMUXP
 RUN python3 -m pip install tmuxp
-# YCM DEPENCENCIES
-RUN install-packages vim-nox && \
-    # TODO go -> manual && nodejs/nom -> nvm && java -> java11?
-    install-packages nodejs npm
-
 # C/C++ - clang
 RUN install-packages clang-format \
       clang-tidy \
@@ -82,12 +77,12 @@ RUN install-packages clang-format \
       lld \
       lldb 
 
-# GITPOD USER
-RUN useradd -l -u 1000 -G sudo -md /home/gitpod -s /bin/bash -p gitpod gitpod
-ENV HOME=/home/gitpod
+# USER
+RUN useradd -l -u 1000 -G sudo -md /home/sebwink -s /bin/bash -p sebwink sebwink
+ENV HOME=/home/sebwink
 WORKDIR $HOME
 
-USER gitpod
+USER sebwink
 
 # SPACEVIM
 RUN curl -sLf https://spacevim.org/install.sh | bash && \
@@ -95,21 +90,36 @@ RUN curl -sLf https://spacevim.org/install.sh | bash && \
     vim "+call dein#add('Shougo/vimproc.vim', {'build': 'make'})" +qall && \
     vim +VimProcInstall +qall
 # SPACEVIM CONFIG
-COPY SpaceVim.d /home/gitpod/.SpaceVim.d
+COPY SpaceVim.d /home/sebwink/.SpaceVim.d
 RUN vim "+call dein#install#_update([], 'update', 0)" +qall
+
+# NVM -> node + npm
+ENV NODE_VERSION 14.16.1
+ENV NVM_DIR $HOME/.nvm
+RUN wget https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh && \
+    bash install.sh -y && rm install.sh && \
+    . ~/.nvm/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm use $NODE_VERSION
+
+# RUST
+RUN wget -O install-rust.sh https://sh.rustup.rs && \
+    bash install-rust.sh -y && rm install-rust.sh
+
 # YCM
 RUN cd ~/.cache/vimfiles/repos/github.com/Valloric/YouCompleteMe && \
+    . ~/.nvm/nvm.sh && \
+    nvm use $NODE_VERSION && \
     python3 install.py --clangd-complete --rust-completer --ts-completer
 
 RUN vim +UpdateRemotePlugins +qall
 
 # XONSH CONFIG
-COPY xonshrc /home/gitpod/.xonshrc
+COPY xonshrc /home/sebwink/.xonshrc
 RUN mkdir -p $HOME/.xcontext/docker
 # TMUX CONFIG
-COPY tmux.conf /home/gitpod/.tmux.conf
+COPY tmux.conf /home/sebwink/.tmux.conf
 # TMUXP
 #
 RUN mkdir workspace
-WORKDIR /home/gitpod/workspace
-
+WORKDIR /home/sebwink/workspace
