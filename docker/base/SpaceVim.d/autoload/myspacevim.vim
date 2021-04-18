@@ -1,4 +1,9 @@
 function! myspacevim#before() abort
+  " KITE
+  let g:kite_supported_languages = ['python', 'cpp']
+  set completeopt+=menuone
+  set completeopt+=noinsert
+  " ALE
   let g:ale_shell = 'bash'
   let g:ale_linters = {
     \'cpp': ['clang', 'clangtidy', 'cpplint'],
@@ -19,10 +24,6 @@ function! myspacevim#before() abort
   let g:UltiSnipsExpandTrigger="<c-s>"
   let g:UltiSnipsJumpForwardTrigger="<c-b>"
   let g:UltiSnipsJumpBackwardTrigger="<c-z>"
-  " KITE
-  let g:kite_supported_languages = ['python', 'cpp']
-  set completeopt+=menuone
-  set completeopt+=noinsert
 endfunction
 
 function! myspacevim#after() abort
