@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 RUN yes | unminimize
 
@@ -7,13 +7,13 @@ ARG DEBIAN_FRONTEND=noninteractive
 # CONFIGURATION
 # NEOVIM version
 ARG NVIM_VERSION
-ENV NVIM_VERSION=${NVIM_VERSION:-0.4.4}
+ENV NVIM_VERSION=${NVIM_VERSION:-0.8.0}
 # CMAKE version
 ARG CMAKE_VERSION
-ENV CMAKE_VERSION=${CMAKE_VERSION:-3.20.1}
+ENV CMAKE_VERSION=${CMAKE_VERSION:-3.24.2}
 # NODE version
 ARG NODE_VERSION
-ENV NODE_VERSION=${NODE_VERSION:-14.16.1}
+ENV NODE_VERSION=${NODE_VERSION:-18.12.0}
 
 USER root
 
@@ -49,6 +49,7 @@ RUN install-packages curl \
       libtool \
       libtool-bin \
       python3 \
+      python-is-python3 \
       ttf-mscorefonts-installer \
       fontconfig \
       libssl-dev \
@@ -81,7 +82,7 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     cd .. && rm -r cmake-${CMAKE_VERSION}-linux-x86_64
 
 # PIP
-RUN install-packages python3-distutils python3-apt python3-dev && \
+RUN install-packages python3-distutils python3-apt python3-dev python3-venv && \
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python3 get-pip.py && \
     rm get-pip.py
@@ -97,22 +98,40 @@ RUN python3 -m pip install neovim && \
     cp -r nvim-linux64/share/* /usr/local/share/ && \
     rm -r nvim-linux64*
 
-# XONSH
-RUN python3 -m pip install xonsh xonsh-autoxsh prompt_toolkit jedi
 # TMUXP
 RUN python3 -m pip install tmuxp
 
-# USER
-RUN useradd -l -u 1000 -G sudo -md /home/sebwink -s /bin/bash -p sebwink sebwink
-ENV HOME /home/sebwink
-WORKDIR $HOME
-USER sebwink
+# GCC 12
+RUN install-packages gcc-12 g++-12
 
-# KITE
-RUN wget -q -O install-kite.sh https://linux.kite.com/dls/linux/current && \
-    bash install-kite.sh --download && \
-    ./kite-installer install --no-launch && \
-    rm install-kite.sh kite-installer 
+# CLANG 14
+RUN install-packages clang-format \
+      clang-tidy \
+      clang \
+      libomp5 \
+      lld \
+      lldb 
+
+# .NET 6
+RUN install-packages dotnet6
+
+# USER
+RUN useradd -l -u 1000 -G sudo -md /home/u -s /bin/bash -p u u
+ENV HOME /home/u
+WORKDIR $HOME
+USER u
+
+# NVM -> node + npm
+ENV NVM_DIR $HOME/.nvm
+RUN wget https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh && \
+    bash install.sh -y && rm install.sh && \
+    . $NVM_DIR/nvm.sh && \
+    nvm install $NODE_VERSION && \
+    nvm use $NODE_VERSION
+
+RUN . $NVM_DIR/nvm.sh && \
+    nvm use $NODE_VERSION && \
+    npm install -g neovim
 
 # SPACEVIM
 RUN curl -sLf https://spacevim.org/install.sh | bash && \
@@ -121,30 +140,43 @@ RUN curl -sLf https://spacevim.org/install.sh | bash && \
     vim +VimProcInstall +qall
 # SPACEVIM CONFIG
 COPY docker/base/SpaceVim.d $HOME/.SpaceVim.d
-RUN vim "+call dein#install#_update([], 'update', 0)" +qall
+RUN . $NVM_DIR/nvm.sh && \
+    nvm use $NODE_VERSION && \
+    vim "+call dein#install#_update([], 'update', 0)" +qall
 
-# NVM -> node + npm
-ENV NVM_DIR $HOME/.nvm
-RUN wget https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh && \
-    bash install.sh -y && rm install.sh && \
-    . $NVM_DIR/nvm.sh && \
-    nvm install $NODE_VERSION && \
-    nvm use $NODE_VERSION
+# Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > install-rust.sh && \
+    bash install-rust.sh -y && \
+    rm install-rust.sh
 
 # YCM
 RUN cd ~/.cache/vimfiles/repos/github.com/Valloric/YouCompleteMe && \
     . ~/.nvm/nvm.sh && \
     nvm use $NODE_VERSION && \
-    python3 install.py --clangd-complete --rust-completer --ts-completer
+    python3 install.py --clangd-completer --rust-completer --ts-completer
 
-RUN vim +UpdateRemotePlugins +qall
+RUN . $NVM_DIR/nvm.sh && \
+    nvm use $NODE_VERSION && \
+    vim +UpdateRemotePlugins +qall
 
-COPY docker/base/kite-vim-plugin.json $HOME/.kite-vim-plugin.json
-RUN mv $HOME/.kite-vim-plugin.json $HOME/.kite/vim-plugin.json
+# CPPCHECK & PYLINT
+RUN python3 -m pip install --user cpplint pylint
+# POETRY
+RUN mkdir -p $HOME/.local/share/pypoetry && \
+    cd $HOME/.local/share/pypoetry && \
+    python3 -m venv venv && \
+    ./venv/bin/pip install -U pip setuptools && \
+    ./venv/bin/pip install poetry
 
-# XONSH CONFIG
-COPY docker/base/xonshrc $HOME/.xonshrc
-RUN mkdir -p $HOME/.xcontext/docker
+RUN echo 'export PATH=$PATH:$HOME/.local/bin' >> $HOME/.bashrc && \
+    echo 'export PATH=$PATH:$HOME/.nvm/versions/node/$NODE_VERSION/bin' >> $HOME/.bashrc && \
+    ln -s $HOME/.local/share/pypoetry/venv/bin/poetry $HOME/.local/bin/poetry
+
+USER root
+RUN ln -s $HOME/.nvm/versions/node/v$NODE_VERSION/bin/node /usr/local/bin/node && \
+    ln -s $HOME/.nvm/versions/node/v$NODE_VERSION/bin/npm /usr/local/bin/npm
+USER u
+
 # TMUX CONFIG
 COPY docker/base/tmux.conf $HOME/.tmux.conf
 

@@ -11,8 +11,8 @@
   # set spacevim theme. by default colorscheme layer is not loaded,
   # if you want to use more colorscheme, please load the colorscheme
   # layer
-  colorscheme = "gruvbox"
-  colorscheme_bg = "dark"
+  colorscheme = "atom"
+  #colorscheme_bg = "dark"
   # Disable guicolors in basic mode, many terminal do not support 24bit
   # true colors
   enable_guicolors = true
@@ -34,10 +34,21 @@
   bootstrap_after = 'myspacevim#after'
 
 [[custom_plugins]]
-  repo = "kiteco/vim-plugin"
+  repo = "HerringtonDarkholme/yats"
+  merged = false
+
+[[custom_plugins]]
+  repo = "jpalardy/vim-slime"
+  merged = false
+
+[[custom_plugins]]
+  repo = "rafi/awesome-vim-colorschemes"
   merged = false
 
 # Enable autocomplete layer
+[[layers]]
+  name = "colorscheme"
+
 [[layers]]
   name = 'autocomplete'
   auto_completion_return_key_behavior = "complete"
@@ -53,7 +64,16 @@
   default_position = 'top'
   default_height = 30
 
+[[layers]]
+  name = "tmux"
+
 # LANGUAGES
+[[layers]]
+  name = "lang#toml"
+
+[[layers]]
+  name = "lang#sh"
+
 [[layers]]
   name = "lang#c"
 
@@ -65,3 +85,18 @@
 
 [[layers]]
   name = "lang#dockerfile"
+
+[[layers]]
+  name = "lang#latex"
+
+[[layers]]
+  name = "lang#html"
+
+[[layers]]
+  name = "lang#javascript"
+
+[[layers]]
+  name = "lang#typescript"
+
+[[layers]]
+  name = "lang#csharp"

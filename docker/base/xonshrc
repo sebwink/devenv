@@ -18,11 +18,12 @@ $VI_MODE = True
 
 # XONSH WIZARD END
 #
-aliases['dctx'] = 'cd ~/.xcontext/docker'
+
+aliases['dctl'] = 'cd ~/ctl/docker'
 
 # nerd fonts
 
-# source-bash $HOME/bin/nerd-fonts/i_dev.sh
+#source-bash $HOME/bin/nerd-fonts/i_dev.sh
 # source-bash $HOME/bin/nerd-fonts/i_material.sh
 
 NF_GIT = ''
@@ -107,7 +108,11 @@ class Git:
 
 	@classmethod
 	def is_cpp(cls):
-		return cls.isx(lambda: $(ls CMakeLists.txt)) and cls.isx(lambda: $(grep CXX CMakeLists.txt))
+		return cls.isx(cls._is_cpp)
+
+	@classmethod 
+	def _is_cpp(cls):
+		return $(grep "CXX=" Makefile)
 
 	@classmethod 
 	def is_R(cls):
@@ -132,7 +137,7 @@ def prompt():
 	if Git.inside_worktree():
 		p += ''
 		repo = Git.repo_name()
-		p += NF_GIT + ' ({INTENSE_YELLOW}'+repo+'{RESET}:{GREEN}{curr_branch}{RESET})'
+		p += NF_GIT + ' ({INTENSE_YELLOW}'+repo+'{NO_COLOR}:{GREEN}{curr_branch}{NO_COLOR})'
 		tech = []
 		if Git.is_rust():
 			tech.append( NF_RUST + ' ' )
@@ -156,17 +161,31 @@ def prompt():
 	cursor = ''
 	if $(pwd).strip() == $HOME+'/ctl/docker':
 		cursor = NF_DOCKER
-	p += '{INTENSE_GREEN}'+cursor+'{RESET} '
+	p += '{INTENSE_GREEN}'+cursor+'{NO_COLOR} '
 	return p
 
 $PROMPT = prompt 
 
+'''
+from queue import Queue
+
+origin_dir = Queue()
+origin_dir.put($HOME)
+
+@events.on_precommand
+def _origin_dir(**kw):
+	cwd = os.getcwd() 
+	if cwd != $HOME+'/ctl/docker':
+		origin_dir.get()
+		origin_dir.put(cwd) 
+'''
+
 # CMD hooks
 @events.on_transform_command
-def _docker(cmd, **kw):
+def _dctl(cmd, **kw):
 	cwd = os.getcwd()
-	if cwd == $HOME+'/.xcontext/docker':
+	if cwd == $HOME+'/ctl/docker':
 		if not cmd.startswith('docker') and \
 		   not cmd.startswith('cd'):
-			cmd = 'docker ' + cmd.strip()
+			cmd = 'docker '+cmd.strip()
 	return cmd

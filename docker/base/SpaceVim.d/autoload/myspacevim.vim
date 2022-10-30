@@ -6,8 +6,9 @@ function! myspacevim#before() abort
   " ALE
   let g:ale_shell = 'bash'
   let g:ale_linters = {
-    \'cpp': ['clang', 'clangtidy', 'cpplint'],
-    \'c': ['clang', 'clangtidy'],
+    \'cpp': ['clangtidy', 'cpplint'],
+    \'c': ['clangtidy'],
+    \'cs': ['OmniSharp'],
     \'python': ['pylint'],
     \'dockerfile': ['dockerfile_lint']
   \}
@@ -24,6 +25,21 @@ function! myspacevim#before() abort
   let g:UltiSnipsExpandTrigger="<c-s>"
   let g:UltiSnipsJumpForwardTrigger="<c-b>"
   let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+  " VIM-SLIME
+  let g:slime_target = "tmux"
+  " OmniSharp
+  let g:OmniSharp_server_use_mono = 0
+  " YCM command aliases
+  command Yd YcmCompleter GoToDeclaration
+  nnoremap <C-d> :Yd<CR>
+  command Ydec YcmCompleter GoToDeclaration
+  command Ydef YcmCompleter GoToDefinition
+  command Yr YcmCompleter GoToReferences
+  nnoremap <C-r> :Yr<CR>
+  command Yg YcmCompleter GoTo
+  nnoremap <C-g> :Yg<CR>
+  command Yi YcmCompleter GoToInclude
+  nnoremap <C-i> :Yi<CR>
 endfunction
 
 function! myspacevim#after() abort
